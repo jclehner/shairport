@@ -35,10 +35,20 @@ ifndef CONFIG_HAVE_GETOPT_H
 SRCS += getopt_long.c
 endif
 
+ifdef CONFIG_SVC_SRC
+install-svc:
+	install -m 755 $(CONFIG_SVC_SRC) $(CONFIG_SVC_DEST)
+else
+install-svc:
+
+endif
+
+
+
 # default target
 all: shairport
 
-install: shairport
+install: shairport install-svc
 	install -m 755 -d $(PREFIX)/bin
 	install -m 755 shairport $(PREFIX)/bin/shairport
 

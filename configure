@@ -48,6 +48,13 @@ if [ `uname` = 'OpenBSD' ]; then
 	echo "#define CONFIG_SNDIO" >> config.h
 	echo "CONFIG_SNDIO=yes" >> config.mk
 	LDFLAGS="${LDFLAGS} -lsndio"
+elif [ `uname` = 'Linux' ]; then
+	if pkg-config systemd 2>/dev/null; then
+		echo "systemd found"
+		UNITS="`pkg-config systemd --variable=systemdsystemunitdir`"
+		echo "CONFIG_SVC_SRC=scripts/shairport.service" >> config.mk
+		echo "CONFIG_SVC_DEST=${UNITS}" >> config.mk
+	fi
 fi
 
 echo "CFLAGS+=${CFLAGS}" >> config.mk
