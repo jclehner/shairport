@@ -105,6 +105,18 @@ AC_ARG_WITH(alsa, [  --with-alsa = choose native ALSA API support (GNU/Linux onl
      AC_DEFINE([HAVE_LIBASOUND],[1],[Define to 1 if you have ALSA])])])
 AM_CONDITIONAL([USE_ALSA], [test "x$HAS_ALSA" = "x1"])
 
+# Look for TinyALSA flag
+AC_ARG_WITH(tinyalsa, [  --with-tinyalsa = choose TinyALSA API support],
+  [AC_MSG_RESULT(>>Including an ALSA back end)
+  HAS_TINYALSA=1
+  AM_CONDITIONAL([USE_TINYALSA], [test 0])
+  AC_DEFINE([CONFIG_TINYALSA], 1, [Needed by the compiler.])
+  PKG_CHECK_MODULES(
+    [TINYALSA], [tinyalsa],
+    [LIBS="${TINYALSA_LIBS} ${LIBS}"
+     AC_DEFINE([HAVE_TINYALSA],[1],[Define to 1 if you have TinyALSA])])])
+AM_CONDITIONAL([USE_TINYALSA], [test "x$HAS_TINYALSA" = "x1"])
+
 # Look for SNDIO flag
 AC_ARG_WITH(sndio, [  --with-sndio = choose native SNDIO API support (FreeBSD) -- probably broken], [
   AC_MSG_RESULT(>>Including a SNDIO back end --- N.B. this is probably broken!)
