@@ -24,12 +24,12 @@ AC_PROG_INSTALL
 PKG_PROG_PKG_CONFIG([0.9.0])
 
 # Checks for libraries.
-if test "x${with_os_type}" = xlinux; then
- AC_CHECK_LIB([rt],[clock_gettime], , AC_MSG_ERROR(librt needed))
-fi
+#if test "x${with_os_type}" = xlinux; then
+# AC_CHECK_LIB([rt],[clock_gettime], , AC_MSG_ERROR(librt needed))
+#fi
 
-AC_CHECK_LIB([daemon],[daemon_log], , AC_MSG_ERROR(libdaemon needed))
-AC_CHECK_LIB([pthread],[pthread_create], , AC_MSG_ERROR(pthread library needed))
+#AC_CHECK_LIB([daemon],[daemon_log], , AC_MSG_ERROR(libdaemon needed))
+#AC_CHECK_LIB([pthread],[pthread_create], , AC_MSG_ERROR(pthread library needed))
 AC_CHECK_LIB([m],[exp], , AC_MSG_ERROR(maths library needed))
 PKG_CHECK_MODULES(
     [POPT], [popt],
@@ -171,8 +171,8 @@ AC_TYPE_UINT8_T
 # Checks for library functions.
 AC_FUNC_ERROR_AT_LINE
 AC_FUNC_FORK
-AC_FUNC_MALLOC
-AC_FUNC_REALLOC
+#AC_FUNC_MALLOC
+#AC_FUNC_REALLOC
 AC_CHECK_FUNCS([clock_gettime gethostname gettimeofday inet_ntoa memchr memmove memset pow select socket stpcpy strcasecmp strchr strdup strerror strstr strtol strtoul])
 
 AC_CONFIG_FILES([Makefile man/Makefile])

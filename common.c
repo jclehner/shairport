@@ -67,7 +67,15 @@
 
 
 #include "common.h"
+#ifndef __ANDROID__ || false
 #include <libdaemon/dlog.h>
+#else
+#define LOG_EMERG stderr
+#define LOG_WARNING stderr
+#define LOG_DEBUG stdout
+#define LOG_INFO stdout
+#define daemon_log(level, format, arg) fprintf(level, format "\n", arg)
+#endif
 
 //true if Shairport Sync is supposed to be sending output to the output device, false otherwise
 

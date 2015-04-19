@@ -36,8 +36,9 @@
 #include <pthread.h>
 #include <math.h>
 #include <sys/stat.h>
-#include <sys/signal.h>
-#include <sys/syslog.h>
+//#include <sys/signal.h>
+#include <signal.h>
+//#include <sys/syslog.h>
 #include <assert.h>
 #include <fcntl.h>
 #include <stdlib.h>
@@ -792,8 +793,9 @@ static void *player_thread_func(void *arg) {
   const int print_interval = trend_interval; // don't ask...
   // I think it's useful to keep this prime to prevent it from falling into a pattern with some other process.
   
-  char  rnstate[256];
-  initstate(time(NULL),rnstate,256);
+  //char  rnstate[256];
+  //initstate(time(NULL),rnstate,256);
+  srandom(time(NULL));
   
   signed short *inbuf, *outbuf, *silence;
   outbuf = malloc(OUTFRAME_BYTES(frame_size));
@@ -1092,14 +1094,13 @@ int player_play(stream_cfg *stream) {
   command_start();
  
   // set the flowcontrol condition variable to wait on a monotonic clock
-#ifdef COMPILE_FOR_LINUX
+#if defined COMPILE_FOR_OSX || defined __ANDROID__
+  int rc = pthread_cond_init(&flowcontrol,NULL);  
+#elif defined COMPILE_FOR_LINUX
   pthread_condattr_t attr;
   pthread_condattr_init(&attr);
   pthread_condattr_setclock( &attr, CLOCK_MONOTONIC); // can't do this in OS X, and don't need it.
   int rc = pthread_cond_init(&flowcontrol,&attr);
-#endif
-#ifdef COMPILE_FOR_OSX
-  int rc = pthread_cond_init(&flowcontrol,NULL);  
 #endif
   if (rc)
     debug(1,"Error initialising condition variable.");

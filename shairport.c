@@ -52,12 +52,19 @@
 #include "rtp.h"
 #include "mdns.h"
 
+/*
 #include <libdaemon/dfork.h>
 #include <libdaemon/dsignal.h>
 #include <libdaemon/dlog.h>
 #include <libdaemon/dpid.h>
 #include <libdaemon/dexec.h>
+*/
 
+#define daemon_log fprintf
+#define LOG_WARNING stderr
+#define LOG_ERR stderr
+#define LOG_NOTICE stdout
+#define LOG_INFO stdout
 
 static int shutting_down = 0;
 
@@ -121,6 +128,9 @@ void print_version(void) {
 #endif
 #ifdef CONFIG_ALSA
 	strcat(version_string,"-ALSA");
+#endif
+#ifdef CONFIG_TINYALSA
+	strcat(version_string,"-TinyALSA");
 #endif
 #ifdef CONFIG_SNDIO
 	strcat(version_string,"-sndio");
@@ -336,7 +346,7 @@ const char *pid_file_proc(void) {
 
 int main(int argc, char **argv) {
 
-    daemon_set_verbosity(LOG_DEBUG);
+    //daemon_set_verbosity(LOG_DEBUG);
 
     memset(&config, 0, sizeof(config)); // also clears all strings, BTW
 
@@ -393,7 +403,7 @@ int main(int argc, char **argv) {
 #endif
 
     /* Set indentification string for the daemon for both syslog and PID file */
-    daemon_pid_file_ident = daemon_log_ident = daemon_ident_from_argv0(argv[0]);
+    //daemon_pid_file_ident = daemon_log_ident = daemon_ident_from_argv0(argv[0]);
     
     /* Check if we are called with -D or --disconnectFromOutput parameter */
     if (argc >= 2 && ((strcmp(argv[1], "-D")==0) || (strcmp(argv[1], "--disconnectFromOutput")==0))) {
