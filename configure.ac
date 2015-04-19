@@ -11,7 +11,7 @@ AC_CONFIG_HEADERS([config.h])
 #
 # Specifying the OS type, defaulting to linux.
 #
-AC_ARG_WITH(os_type, AS_HELP_STRING([--with-os-type=OSType],[Specify the distribution to target: One of linux darwin]))
+AC_ARG_WITH(os_type, AS_HELP_STRING([--with-os-type=OSType],[Specify the distribution to target: One of linux darwin android]))
 if test "z$with_os_type" = "z"; then
   with_os_type="linux"
 fi
@@ -24,12 +24,24 @@ AC_PROG_INSTALL
 PKG_PROG_PKG_CONFIG([0.9.0])
 
 # Checks for libraries.
-#if test "x${with_os_type}" = xlinux; then
-# AC_CHECK_LIB([rt],[clock_gettime], , AC_MSG_ERROR(librt needed))
-#fi
+if test "x${with_os_type}" = xlinux; then
+  AC_CHECK_LIB([rt],[clock_gettime], , AC_MSG_ERROR(librt needed))
+fi
 
-#AC_CHECK_LIB([daemon],[daemon_log], , AC_MSG_ERROR(libdaemon needed))
-#AC_CHECK_LIB([pthread],[pthread_create], , AC_MSG_ERROR(pthread library needed))
+if test "x${DAEMON_LIBS}" = x; then
+  AC_CHECK_LIB([daemon],[daemon_log], , AC_MSG_ERROR(libdaemon needed))
+else
+  AC_DEFINE([USE_LIBDAEMON],1,[Define to 1 if you have libdaemon])
+  LIBS="${DAEMON_LIBS} ${LIBS}"
+fi
+
+PKG_CHECK_MODULES(
+    [DAEMON], [libdaemon],
+    [LIBS="${DAEMON_LIBS} ${LIBS}"
+     AC_DEFINE([USE_LIBDAEMON],1,[Define to 1 if you have libdaemon])])
+
+AX_PTHREAD
+
 AC_CHECK_LIB([m],[exp], , AC_MSG_ERROR(maths library needed))
 PKG_CHECK_MODULES(
     [POPT], [popt],
@@ -63,7 +75,11 @@ AC_ARG_WITH(ssl, [ choose --with-ssl=openssl or --with-ssl=polarssl for encrypti
         AC_DEFINE([HAVE_LIBCRYPTO],[1],[Define to 1 if you have libcrypto])
         AC_DEFINE([HAVE_LIBSSL],[1],[Define to 1 if you have libssl])])
   elif test "x${with_ssl}" = xpolarssl ; then
-    AC_CHECK_LIB([polarssl],[ssl_init], , AC_MSG_ERROR(PolarSSL selected but the library cannot be found!))
+    if test "x${SSL_LIBS}" = x; then
+      AC_CHECK_LIB([polarssl],[ssl_init], , AC_MSG_ERROR(PolarSSL selected but the library cannot be found!))
+    else
+      AC_DEFINE([HAVE_LIBPOLARSSL],[1],[Define to 1 if you have libpolarssl])
+    fi
   else
     AC_MSG_ERROR(unknown option "${with_ssl}"." Please choose with "openssl" or "polarssl")
   fi
@@ -171,8 +187,10 @@ AC_TYPE_UINT8_T
 # Checks for library functions.
 AC_FUNC_ERROR_AT_LINE
 AC_FUNC_FORK
-#AC_FUNC_MALLOC
-#AC_FUNC_REALLOC
+if test "x${with_os_type}" != xandroid; then
+  AC_FUNC_MALLOC
+  AC_FUNC_REALLOC
+fi
 AC_CHECK_FUNCS([clock_gettime gethostname gettimeofday inet_ntoa memchr memmove memset pow select socket stpcpy strcasecmp strchr strdup strerror strstr strtol strtoul])
 
 AC_CONFIG_FILES([Makefile man/Makefile])
