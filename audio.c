@@ -44,6 +44,9 @@ extern audio_output audio_alsa;
 #ifdef CONFIG_TINYALSA
 extern audio_output audio_tinyalsa;
 #endif
+#ifdef CONFIG_OPENSLES
+extern audio_output audio_opensles;
+#endif
 extern audio_output audio_dummy, audio_pipe;
 
 static audio_output *outputs[] = {
@@ -61,6 +64,9 @@ static audio_output *outputs[] = {
 #endif
 #ifdef CONFIG_AO
     &audio_ao,
+#endif
+#ifdef CONFIG_OPENSLES
+	&audio_opensles,
 #endif
     &audio_dummy,
     &audio_pipe,
