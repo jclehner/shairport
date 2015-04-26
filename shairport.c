@@ -52,6 +52,47 @@
 #include "rtp.h"
 #include "mdns.h"
 
+#ifdef __ANDROID__
+#include <dlfcn.h>
+// cutils is not part of the NDK, so we resort to dlsym
+
+static void *cutils = NULL;
+static int (*property_get)(const char *, char *, const char *);
+
+int get_android_device(char *buffer, size_t size) {
+	if (!cutils) {
+		cutils = dlopen("/system/lib/libcutils.so", RTLD_LOCAL);
+		if (!cutils) {
+			return -1;
+		}
+
+		property_get = dlsym(cutils, "property_get");
+		if (!property_get) {
+			return -1;
+		}
+	}
+
+	char vendor[256];
+	if (!property_get("ro.product.manufacturer", vendor, NULL)) {
+		return -1;
+	}
+
+	char model[256];
+	if (!property_get("ro.product.model", model, NULL)) {
+		return -1;
+	}
+
+	// Prevent names such as "HTC HTC Desire"
+	if (strstr(model, vendor) == model) {
+		snprintf(buffer, size, "%s", model);
+	} else {
+		snprintf(buffer, size, "%s %s", vendor, model);
+	}
+
+	return 0;
+}
+#endif
+
 /*
 #include <libdaemon/dfork.h>
 #include <libdaemon/dsignal.h>
@@ -363,10 +404,17 @@ int main(int argc, char **argv) {
     config.buffer_start_fill = 220;
     config.port = 5000;
     config.packet_stuffing = ST_basic; // simple interpolation or deletion
-    char hostname[100];
-    gethostname(hostname, 100);
+    char name[100];
+#ifndef __ANDROID__
+    gethostname(name, 100);
+#else
+	if (get_android_device(name, 100) != 0) {
+		strcpy(name, "Android");
+	}
+#endif
+
     config.apname = malloc(20 + 100);
-    snprintf(config.apname, 20 + 100, "Shairport Sync on %s", hostname);
+    snprintf(config.apname, 20 + 100, "Shairport Sync on %s", name);
     set_requested_connection_state_to_output(1); // we expect to be able to connect to the output device
     
     /* Check if we are called with -V or --version parameter */
