@@ -70,14 +70,6 @@ static double sw_volume = 1.0;
 static short *buffers[BUFFER_COUNT];
 static int buffer_index = 0;
 static short *buffer_p = NULL;
-// number of samples stored in current buffer
-static int buffer_fill = 0;
-
-// timestamp (in milliseconds) of the first call
-// to play() after a stop()
-static long long started = 0;
-// at 44100 Hz, this overflows every 6.6 million years
-static long long samples_played = 0;
 
 void buffers_alloc() {
 	int i = 0;
@@ -99,7 +91,6 @@ void buffers_free() {
 void buffers_next() {
 	buffer_index = (buffer_index + 1) % BUFFER_COUNT;
 	buffer_p = buffers[buffer_index];
-	buffer_fill = 0;
 }
 
 static void sl_perror(SLresult res, const char* message) {
@@ -261,28 +252,9 @@ static int init(int argc, char **argv) {
 static void start(int sample_rate) {
 	if (sample_rate != 44100)
 		die("Unexpected sample rate");
-
-	// this is set by the first call to do_play()
-	started = 0;
-}
-
-static long long now(void) {
-#if 1
-	static struct timeval tv;
-	gettimeofday(&tv, NULL);
-	return tv.tv_usec + 1e6 * tv.tv_sec;
-#else
-	struct timespec ts;
-	clock_gettime(CLOCK_MONOTONIC, &ts);
-	return ts.tv_nsec / 1000 + ts.tv_sec * 1000000;
-#endif
 }
 
 static SLresult do_play(short buf[], int samples) {
-
-	if (!started) {
-		started = now();
-	}
 
 	if (!volume_itf && sw_volume < 1.0) {
 		int i = 0;
@@ -293,50 +265,19 @@ static SLresult do_play(short buf[], int samples) {
 
 	SLresult res;
 
-	if (buffer_fill) {
-		// We have a partially filled buffer. Let's attempt to
-		// fill it
-
-		int count = MIN(BUFFER_SAMPLES - buffer_fill, samples);
-		memcpy(buffer_p + (buffer_fill * 4), buf, count * 4);
-		buffer_fill += count;
-
-		samples -= count;
-		buf += count * 4;
-
-		if (!samples) {
-			// Buffer is not full yet, wait for more samples
-			//debug(1, "waiting for more data");
-			goto out;
-		} else {
-			res = (*bq_itf)->Enqueue(bq_itf, buffer_p, count * 4);
-			if (res != SL_RESULT_SUCCESS) {
-				sl_perror(res, "Failed to enqueue buffer");
-				goto err;
-			}
-
-			buffers_next();
-		}
-	}
-
 	int copied = 0;
 	while (copied < samples) {
 		int count = MIN(samples - copied, BUFFER_SAMPLES);
 		memcpy(buffer_p, buf, count * 4);
 		copied += count;
 
-		if (1 /*&& count == BUFFER_SAMPLES*/) {
-			res = (*bq_itf)->Enqueue(bq_itf, buffer_p, count * 4);
-			if (res != SL_RESULT_SUCCESS) {
-				sl_perror(res, "Failed to enqueue buffer");
-				goto err;
-			}
-
-			buffers_next();
-		} else {
-			// Wait for more data
-			buffer_fill = count;
+		res = (*bq_itf)->Enqueue(bq_itf, buffer_p, count * 4);
+		if (res != SL_RESULT_SUCCESS) {
+			sl_perror(res, "Failed to enqueue buffer");
+			goto err;
 		}
+
+		buffers_next();
 	}
 
 	res = (*player_itf)->SetPlayState(player_itf, SL_PLAYSTATE_PLAYING);
@@ -345,18 +286,6 @@ static SLresult do_play(short buf[], int samples) {
 		goto err;
 	}
 
-out:
-	;
-
-#if 0
-	samples_played += samples;
-
-	long long finish = started + (samples_played * 1e6) / 44100;
-	long long time = finish - now();
-	if (time > 0) {
-		usleep(time);
-	}
-#else
 	SLBufferQueueState state;
 
 	do
@@ -364,7 +293,6 @@ out:
 		usleep(100);
 		res = (*bq_itf)->GetState(bq_itf, &state);
 	} while (res == SL_RESULT_SUCCESS && state.count);
-#endif
 
 err:
 	return res;
@@ -386,8 +314,6 @@ static void stop(void) {
 		(*bq_itf)->Clear(bq_itf);
 		// Ignore return value
 	}
-
-	started = 0;
 }
 
 static void volume(double vol) {
