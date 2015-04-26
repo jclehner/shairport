@@ -66,6 +66,10 @@
 
 #include "alac.h"
 
+#if defined COMPILE_FOR_LINUX && !defined __ANDROID__
+#define USE_CONDATTR_SETCLOCK
+#endif
+
 // parameters from the source
 static unsigned char *aesiv;
 #ifdef HAVE_LIBSSL
@@ -578,7 +582,7 @@ static abuf_t *buffer_get_frame(void) {
       time_to_wait_for_wakeup_fp *= 4*352; // four full 352-frame packets
       time_to_wait_for_wakeup_fp /= 3;  //four thirds of a packet time 
       
-#ifdef COMPILE_FOR_LINUX
+#ifdef USE_CONDATTR_SETCLOCK
       uint64_t time_of_wakeup_fp = local_time_now+time_to_wait_for_wakeup_fp;
       uint64_t sec = time_of_wakeup_fp>>32;
       uint64_t nsec = ((time_of_wakeup_fp&0xffffffff)*1000000000)>>32;
@@ -591,8 +595,7 @@ static abuf_t *buffer_get_frame(void) {
       // int rc = pthread_cond_timedwait(&flowcontrol,&ab_mutex,&time_of_wakeup);
       // if (rc!=0)
       //  debug(1,"pthread_cond_timedwait returned error code %d.",rc);
-#endif
-#ifdef COMPILE_FOR_OSX
+#else
       uint64_t sec = time_to_wait_for_wakeup_fp>>32;;
       uint64_t nsec = ((time_to_wait_for_wakeup_fp&0xffffffff)*1000000000)>>32;
       struct timespec time_to_wait;
@@ -1094,13 +1097,13 @@ int player_play(stream_cfg *stream) {
   command_start();
  
   // set the flowcontrol condition variable to wait on a monotonic clock
-#if defined COMPILE_FOR_OSX || defined __ANDROID__
-  int rc = pthread_cond_init(&flowcontrol,NULL);  
-#elif defined COMPILE_FOR_LINUX
+#ifdef USE_CONDATTR_SETCLOCK
   pthread_condattr_t attr;
   pthread_condattr_init(&attr);
   pthread_condattr_setclock( &attr, CLOCK_MONOTONIC); // can't do this in OS X, and don't need it.
   int rc = pthread_cond_init(&flowcontrol,&attr);
+#else
+  int rc = pthread_cond_init(&flowcontrol,NULL);
 #endif
   if (rc)
     debug(1,"Error initialising condition variable.");
