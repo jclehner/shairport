@@ -129,8 +129,8 @@ void print_version(void) {
 #ifdef CONFIG_ALSA
 	strcat(version_string,"-ALSA");
 #endif
-#ifdef CONFIG_TINYALSA
-	strcat(version_string,"-TinyALSA");
+#ifdef CONFIG_OPENSLES
+	strcat(version_string,"-OpenSLES");
 #endif
 #ifdef CONFIG_SNDIO
 	strcat(version_string,"-sndio");

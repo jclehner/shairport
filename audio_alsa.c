@@ -30,8 +30,7 @@
 #include <unistd.h>
 #include <memory.h>
 #include <pthread.h>
-#include <tinyalsa/asoundlib.h>
-#include <sound/asound.h>
+#include <alsa/asoundlib.h>
 #include "common.h"
 #include "audio.h"
 
