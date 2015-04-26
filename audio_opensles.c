@@ -45,7 +45,6 @@
 #endif
 
 #define BUFFER_COUNT 128
-#define BUFFER_SAMPLES 1024
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
 #define MIN(x, y) ((x) < (y) ? (x) : (y))
 
@@ -71,10 +70,12 @@ static short *buffers[BUFFER_COUNT];
 static int buffer_index = 0;
 static short *buffer_p = NULL;
 
+static int buffer_samples = 1024;
+
 void buffers_alloc() {
 	int i = 0;
 	for (; i != BUFFER_COUNT; ++i) {
-		buffers[i] = malloc(4 * BUFFER_SAMPLES);
+		buffers[i] = malloc(4 * buffer_samples);
 	}
 
 	buffer_p = buffers[0];
@@ -132,7 +133,34 @@ static SLresult do_play(short[], int);
 static void start(int sample_rate);
 static void stop();
 
+static void help(void) {
+    printf(
+			"    -b samples-per-buf      set the number of samples per buffer [1024*|...]\n"
+			"    *) default option\n"
+			);
+}
+
 static int init(int argc, char **argv) {
+
+	optind = 1;
+	--argv;
+	++argc;
+
+	int opt;
+	while ((opt = getopt(argc, argv, "b:")) > 0) {
+		switch (opt) {
+			case 'b':
+				buffer_samples = strtol(optarg, NULL, 10);
+				break;
+			default:
+				help();
+				die("Invalid audio option -%c specified", opt);
+		}
+	}
+
+	if (buffer_samples <= 0) {
+		die("Number of samples per buffer must be > 0");
+	}
 
 	SLresult res = slCreateEngine(&engine_obj, 0, NULL, 0, NULL, NULL);
 	if (res != SL_RESULT_SUCCESS) {
@@ -267,7 +295,7 @@ static SLresult do_play(short buf[], int samples) {
 
 	int copied = 0;
 	while (copied < samples) {
-		int count = MIN(samples - copied, BUFFER_SAMPLES);
+		int count = MIN(samples - copied, buffer_samples);
 		memcpy(buffer_p, buf, count * 4);
 		copied += count;
 
@@ -380,10 +408,6 @@ static void deinit(void) {
 	}
 
 	buffers_free();
-}
-
-static void help(void) {
-    printf("    opensles takes no arguments");
 }
 
 audio_output audio_opensles = {
