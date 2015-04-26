@@ -33,7 +33,7 @@
 #include "tinysvcmdns.h"
 #include "common.h"
 
-#define DEBUG_PRINTF(...) debug(1, __VA_ARGS__)
+#define DEBUG_PRINTF(...) debug(2, __VA_ARGS__)
 #define log_message(level, ...)         \
     do {                                \
         switch(level)                   \
