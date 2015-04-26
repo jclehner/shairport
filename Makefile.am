@@ -22,8 +22,8 @@ if USE_ALSA
 shairport_sync_SOURCES += audio_alsa.c
 endif
 
-if USE_TINYALSA
-shairport_sync_SOURCES += audio_tinyalsa.c
+if USE_OPENSLES
+shairport_sync_SOURCES += audio_opensles.c
 endif
 
 if USE_SNDIO

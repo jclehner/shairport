@@ -133,6 +133,15 @@ AC_ARG_WITH(tinyalsa, [  --with-tinyalsa = choose TinyALSA API support],
      AC_DEFINE([HAVE_TINYALSA],[1],[Define to 1 if you have TinyALSA])])])
 AM_CONDITIONAL([USE_TINYALSA], [test "x$HAS_TINYALSA" = "x1"])
 
+# Look for OpenSLES flag
+AC_ARG_WITH(opensles, [  --with-opensles = choose OpenSL ES support],
+  [AC_MSG_RESULT(>>Including an OpenSL ES backend)
+  HAS_OPENSLES=1
+  AM_CONDITIONAL([USE_OPENSLES], [test 0])
+  AC_DEFINE([CONFIG_OPENSLES], 1, [Needed by the compiler.])
+  AC_CHECK_LIB([OpenSLES],[slCreateEngine], , AC_MSG_ERROR(OpenSL ES support requires the OpenSLES library!))], )
+AM_CONDITIONAL([USE_OPENSLES], [test "x$HAS_OPENSLES" = "x1"])
+
 # Look for SNDIO flag
 AC_ARG_WITH(sndio, [  --with-sndio = choose native SNDIO API support (FreeBSD) -- probably broken], [
   AC_MSG_RESULT(>>Including a SNDIO back end --- N.B. this is probably broken!)

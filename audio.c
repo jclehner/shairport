@@ -41,9 +41,6 @@ extern audio_output audio_pulse;
 #ifdef CONFIG_ALSA
 extern audio_output audio_alsa;
 #endif
-#ifdef CONFIG_TINYALSA
-extern audio_output audio_tinyalsa;
-#endif
 #ifdef CONFIG_OPENSLES
 extern audio_output audio_opensles;
 #endif
@@ -55,9 +52,6 @@ static audio_output *outputs[] = {
 #endif
 #ifdef CONFIG_ALSA
     &audio_alsa,
-#endif
-#ifdef CONFIG_TINYALSA
-	&audio_tinyalsa,
 #endif
 #ifdef CONFIG_PULSE
     &audio_pulse,
